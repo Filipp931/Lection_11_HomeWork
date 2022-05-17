@@ -47,11 +47,11 @@ public class ScalableThreadPool {
                         }
                     }
                 }
-                    //Если в очереди что-то появилось, то приступаем к работе
-                    changeThreadsCount();
-                    task = queue.poll();
-                    task.run();
-                    System.out.printf("%s completed the task!\n", Thread.currentThread().getName());
+                //Если в очереди что-то появилось, то приступаем к работе
+                task = queue.poll();
+                changeThreadsCount();
+                task.run();
+                System.out.printf("%s completed the task!\n", Thread.currentThread().getName());
                 synchronized (threadsStates) {
                     threadsStates.put(Thread.currentThread().getName(), false);
                 }
@@ -62,15 +62,15 @@ public class ScalableThreadPool {
     }
 
     /**
-     * Увеличение числа потоков
+     * Увеличение числа потоков, если все текущие потоки заняты
      */
     private void changeThreadsCount(){
         synchronized (threadsStates) {
             threadsStates.put(Thread.currentThread().getName(), true);
             System.out.println(threadsStates.toString());
             if((threadsStates.size() == minNumberOfThreads) &&
-                    threadsStates.values().stream().noneMatch(Predicate.isEqual(false))){
-                if(myThreadPool.size() == maxNumberOfThreads) return;
+                    threadsStates.values().stream().noneMatch(Predicate.isEqual(false)) &&
+                    !queue.isEmpty()){
                 for (int i = minNumberOfThreads; i < maxNumberOfThreads; i++) {
                     myThreadPool.add(new MyThread());
                     System.out.println("Increasing the number of threads");
@@ -86,12 +86,9 @@ public class ScalableThreadPool {
      */
     private void decreaseThreadsCount(){
         if(myThreadPool.size() == maxNumberOfThreads) {
-            System.out.println(threadsStates.toString());
             System.out.println("Decreasing the number of threads");
             for (int i = minNumberOfThreads; i < maxNumberOfThreads; i++) {
                 myThreadPool.get(i).interrupt();
-                threadsStates.remove(Thread.currentThread().getName());
-
             }
         }
     }
