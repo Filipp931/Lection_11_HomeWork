@@ -7,6 +7,7 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="Lection_10_Multithreading_p2" />
+        <module name="Lection 11 Multithreading p2" />
       </profile>
     </annotationProcessing>
   </component>

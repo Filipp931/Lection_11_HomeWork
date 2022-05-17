@@ -8,9 +8,9 @@ import java.util.function.Predicate;
 public class ScalableThreadPool {
     private final int minNumberOfThreads;
     private final int maxNumberOfThreads;
-    private List<MyThread> myThreadPool = new ArrayList<>();
-    private ConcurrentLinkedQueue<Runnable> queue = new ConcurrentLinkedQueue<>();
-    private static Map<String, Boolean> threadsStates = new ConcurrentHashMap<>();
+    private final List<MyThread> myThreadPool = new ArrayList<>();
+    private final Queue<Runnable> queue = new ConcurrentLinkedQueue<>();
+    private static final Map<String, Boolean> threadsStates = new ConcurrentHashMap<>();
 
 
     public ScalableThreadPool(int minNumberOfThreads, int maxNumberOfThreads) {
@@ -51,9 +51,7 @@ public class ScalableThreadPool {
                     changeThreadsCount();
                     task = queue.poll();
                     task.run();
-
                     System.out.printf("%s completed the task!\n", Thread.currentThread().getName());
-
                 synchronized (threadsStates) {
                     threadsStates.put(Thread.currentThread().getName(), false);
                 }
@@ -62,12 +60,16 @@ public class ScalableThreadPool {
             System.out.printf("Interrupting %s\n", Thread.currentThread().getName());
         }
     }
+
+    /**
+     * Увеличение числа потоков
+     */
     private void changeThreadsCount(){
         synchronized (threadsStates) {
             threadsStates.put(Thread.currentThread().getName(), true);
             System.out.println(threadsStates.toString());
             if((threadsStates.size() == minNumberOfThreads) &&
-                    threadsStates.values().stream().filter(Predicate.isEqual(false)).count() == 0){
+                    threadsStates.values().stream().noneMatch(Predicate.isEqual(false))){
                 if(myThreadPool.size() == maxNumberOfThreads) return;
                 for (int i = minNumberOfThreads; i < maxNumberOfThreads; i++) {
                     myThreadPool.add(new MyThread());
@@ -78,6 +80,10 @@ public class ScalableThreadPool {
 
         }
     }
+
+    /**
+     * Прерывание потоков
+     */
     private void decreaseThreadsCount(){
         if(myThreadPool.size() == maxNumberOfThreads) {
             System.out.println(threadsStates.toString());
