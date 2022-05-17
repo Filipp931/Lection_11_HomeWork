@@ -14,14 +14,14 @@ public class AppTest {
     @Test
     public void FixedThreadPoolTest() {
         FixedThreadPool fixedThreadPool = new FixedThreadPool(10);
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 200; i++) {
             Task task = new Task();
             fixedThreadPool.execute(task);
         }
     }
     @Test
     public void FScalableThreadPoolTest() {
-        ScalableThreadPool scalableThreadPool = new ScalableThreadPool(2,10);
+        ScalableThreadPool scalableThreadPool = new ScalableThreadPool(2,5);
         for (int i = 0; i < 100; i++) {
             Task task = new Task();
             scalableThreadPool.execute(task);

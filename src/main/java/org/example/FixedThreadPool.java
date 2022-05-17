@@ -1,16 +1,14 @@
 package org.example;
 
 import java.sql.SQLOutput;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class FixedThreadPool {
     private final int numberOfThreads;
     private List<MyThread> myThreadPool = new ArrayList<>();
-    private BlockingQueue<Runnable> queue = new LinkedBlockingQueue<>();
+    private Stack<Runnable> queue = new Stack<>();
 
     public FixedThreadPool(int numberOfThreads) {
         this.numberOfThreads = numberOfThreads;
@@ -30,20 +28,19 @@ public class FixedThreadPool {
     private class MyThread extends Thread {
         @Override
         public void run() {
-            Runnable task;
             while (!Thread.currentThread().isInterrupted()) {
-                synchronized (queue) {
-                    while (queue.isEmpty()) {
-                        try {
-                            queue.wait();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
+                 synchronized (queue) {
+                while (queue.isEmpty()) {
+                    try {
+                        queue.wait();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
-                    task = queue.poll();
-                    task.run();
-                    System.out.printf("%s completed the task!\n", Thread.currentThread().getName());
                 }
+            }
+                    System.out.printf("%s Starting solve the task!\n", Thread.currentThread().getName());
+                    queue.pop().run();
+                    System.out.printf("%s completed the task!\n", Thread.currentThread().getName());
             }
             Thread.currentThread().interrupt();
         }
