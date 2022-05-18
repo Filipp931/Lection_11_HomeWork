@@ -8,7 +8,7 @@ import java.util.function.Predicate;
 public class ScalableThreadPool {
     private final int minNumberOfThreads;
     private final int maxNumberOfThreads;
-    private final List<MyThread> myThreadPool = new ArrayList<>();
+    private final List<Thread> myThreadPool = new ArrayList<>();
     private final Queue<Runnable> queue = new ConcurrentLinkedQueue<>();
     private static final Map<String, Boolean> threadsStates = new ConcurrentHashMap<>();
 
@@ -17,7 +17,7 @@ public class ScalableThreadPool {
         this.minNumberOfThreads = minNumberOfThreads;
         this.maxNumberOfThreads = maxNumberOfThreads;
         for (int i = 0; i < minNumberOfThreads; i++) {
-            myThreadPool.add(new MyThread());
+            myThreadPool.add(new Thread(new MyThread()));
             myThreadPool.get(i).start();
         }
     }
@@ -31,31 +31,31 @@ public class ScalableThreadPool {
 
     }
 
-    private class MyThread extends Thread {
+    private class MyThread implements Runnable {
         @Override
         public void run() {
             Runnable task;
             while (!Thread.currentThread().isInterrupted()) {
+                //Если очередь пустая, то ожидаем
                 synchronized (queue) {
-                    //Если очередь пустая, то ожидаем
                     while (queue.isEmpty()) {
                         try {
                             queue.wait();
                         } catch (InterruptedException e) {
                             System.out.printf("%s is interrupting\n", Thread.currentThread().getName());
-                            interrupt();
+                            Thread.currentThread().interrupt();
                         }
                     }
                 }
                 //Если в очереди что-то появилось, то приступаем к работе
-                task = queue.poll();
-                changeThreadsCount();
-                task.run();
+                task = queue.poll();                                         // получаем задание из очереди
+                threadsStates.put(Thread.currentThread().getName(), true);   // устанавливаем его состояние как "занят"
+                System.out.println(threadsStates.toString());
+                changeThreadsCount();                                        // увеличиваем число потоков (при необходимости)
+                task.run();                                                  // выполняем задание
                 System.out.printf("%s completed the task!\n", Thread.currentThread().getName());
-                synchronized (threadsStates) {
-                    threadsStates.put(Thread.currentThread().getName(), false);
-                }
-                if(queue.isEmpty()) decreaseThreadsCount();
+                threadsStates.put(Thread.currentThread().getName(), false);
+                if(queue.isEmpty()) decreaseThreadsCount();                  // уменьшаем число потоков (при необходимости)
             }
             System.out.printf("Interrupting %s\n", Thread.currentThread().getName());
         }
@@ -65,27 +65,22 @@ public class ScalableThreadPool {
      * Увеличение числа потоков, если все текущие потоки заняты
      */
     private void changeThreadsCount(){
-        synchronized (threadsStates) {
-            threadsStates.put(Thread.currentThread().getName(), true);
-            System.out.println(threadsStates.toString());
-            if((threadsStates.size() == minNumberOfThreads) &&
-                    threadsStates.values().stream().noneMatch(Predicate.isEqual(false)) &&
-                    !queue.isEmpty()){
+            if((threadsStates.size() == minNumberOfThreads) &&                              //если количество потоков минимально
+                    threadsStates.values().stream().noneMatch(Predicate.isEqual(false)) &&  //если нет свободных
+                    !queue.isEmpty()){                                                      //если очередь еще не пуста
                 for (int i = minNumberOfThreads; i < maxNumberOfThreads; i++) {
-                    myThreadPool.add(new MyThread());
+                    myThreadPool.add(new Thread(new MyThread()));
                     System.out.println("Increasing the number of threads");
                     myThreadPool.get(i).start();
                 }
             }
-
-        }
     }
 
     /**
      * Прерывание потоков
      */
     private void decreaseThreadsCount(){
-        if(myThreadPool.size() == maxNumberOfThreads) {
+        if(myThreadPool.size() == maxNumberOfThreads) {                                     //если число потоков максимально, то прерываем лишние
             System.out.println("Decreasing the number of threads");
             for (int i = minNumberOfThreads; i < maxNumberOfThreads; i++) {
                 myThreadPool.get(i).interrupt();
