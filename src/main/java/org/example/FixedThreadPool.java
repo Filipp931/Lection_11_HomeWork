@@ -1,19 +1,18 @@
 package org.example;
 
-import java.sql.SQLOutput;
 import java.util.*;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 public class FixedThreadPool {
-    private final int numberOfThreads;
-    private List<MyThread> myThreadPool = new ArrayList<>();
-    private Stack<Runnable> queue = new Stack<>();
+    private final List<Thread> myThreadPool = new ArrayList<>();
+    private final Stack<Runnable> queue = new Stack<>();
 
     public FixedThreadPool(int numberOfThreads) {
-        this.numberOfThreads = numberOfThreads;
+        run(numberOfThreads);
+    }
+
+    private void run(int numberOfThreads) {
         for (int i = 0; i < numberOfThreads; i++) {
-            myThreadPool.add(new MyThread());
+            myThreadPool.add(new Thread(new MyRunnable()));
             myThreadPool.get(i).start();
         }
     }
@@ -25,7 +24,7 @@ public class FixedThreadPool {
         }
     }
 
-    private class MyThread extends Thread {
+    private class MyRunnable implements Runnable {
         @Override
         public void run() {
             while (!Thread.currentThread().isInterrupted()) {

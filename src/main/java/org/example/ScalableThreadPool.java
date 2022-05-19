@@ -32,7 +32,6 @@ public class ScalableThreadPool {
             System.out.println("Adding new task to queue");
             queue.notify();
         }
-
     }
 
     private class MyThread implements Runnable {
