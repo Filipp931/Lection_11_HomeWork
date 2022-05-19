@@ -16,6 +16,10 @@ public class ScalableThreadPool {
     public ScalableThreadPool(int minNumberOfThreads, int maxNumberOfThreads) {
         this.minNumberOfThreads = minNumberOfThreads;
         this.maxNumberOfThreads = maxNumberOfThreads;
+        start();
+    }
+
+    private void start() {
         for (int i = 0; i < minNumberOfThreads; i++) {
             myThreadPool.add(new Thread(new MyThread()));
             myThreadPool.get(i).start();
